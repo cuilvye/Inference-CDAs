@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Feb  9 10:11:31 2023
 
-@author: lvye
-"""
 import random, math
 import pandas as pd
 import numpy as np
@@ -112,47 +108,6 @@ def Determine_features_RNN(df):
     assert (len(cols_name_set_X) + len(cols_name_set_notX)) == len(cols_name_set_sel)
     seq_dim = len(cols_name_set_X)   
     
-    return df_sel, seq_dim
-
-
-def Determine_features_RNN_Transformer(df):
-    cols_name_set = df.columns.values.tolist()
-    cols_name_set_sel = copy.deepcopy(cols_name_set)
-    cols_name_set_remove = [
-        'h3-cost', 'h2-cost', 'h1-cost',
-        'a2', 'a3', 'b2', 'b3',  ## a1(the minimum of other sellers' asks) and b1(the largest bid value among buyers)
-        'h3-a2', 'h3-a3', 'h3-b2', 'h3-b3',
-        'h2-a2', 'h2-a3', 'h2-b2', 'h2-b3',
-        'h1-a2', 'h1-a3', 'h1-b2', 'h1-b3',
-        'h3-b1', 'h3-a1', 'h3-trans-mean', 'h3-trans-max', 'h3-trans-min', 'h3-trans-median', 'h3-trans-num',
-        # timestep=3, for h3, lack h4,so remove all h3-contexts
-        'h2-trans-mean', 'h2-trans-max', 'h2-trans-min', 'h2-trans-median', 'h2-trans-num',
-        'h1-trans-mean', 'h1-trans-max', 'h1-trans-min', 'h1-trans-median', 'h1-trans-num',
-        'trans-mean', 'trans-max', 'trans-min', 'trans-median', 'trans-num',
-        'h3', 'h2', 'h1',
-
-    ]
-    for name in cols_name_set_remove:
-        cols_name_set_sel.remove(name)
-
-    ## print(cols_name_set_sel)#len(cols_name_set_X) = 24, input_dim of each timestep is 8+1(cost), timestep = 3
-    # ['h3', 'h2-b1', 'h2-a1', 'h2-trans-mean', 'h2-trans-max', 'h2-trans-min',
-    # 'h2-trans-median', 'h2-trans-num', 'h2', 'h1-b1', 'h1-a1', 'h1-trans-mean',
-    # 'h1-trans-max', 'h1-trans-min', 'h1-trans-median', 'h1-trans-num', 'h1', 'b1',
-    # 'a1', 'trans-mean', 'trans-max', 'trans-min', 'trans-median', 'trans-num']
-    ## print(cols_name_set_sel)#len(cols_name_set_X) = 9, input_dim of each timestep is 3+1(cost), timestep = 3
-    # ['h2-b1', 'h2-a1',   'h1-b1', 'h1-a1',  'b1','a1', ]
-    df_sel = df[cols_name_set_sel]
-
-    cols_name_set_notX = ['MarketID_period', 'userid_profile', 'unit',
-                          'ask', 'cost', 'upper_bound_unit_cost']
-    cols_name_set_X = copy.deepcopy(cols_name_set_sel)
-    for name in cols_name_set_notX:
-        cols_name_set_X.remove(name)
-
-    assert (len(cols_name_set_X) + len(cols_name_set_notX)) == len(cols_name_set_sel)
-    seq_dim = len(cols_name_set_X)
-
     return df_sel, seq_dim
 
 
@@ -585,45 +540,6 @@ def Convert_to_training_DataFormat_Class7(batch_idataFrame, classes):
         'h3', 'h2-b1', 'h2-a1',
         'h2', 'h1-b1', 'h1-a1',
         'h1', 'b1', 'a1']
-    # cols_name_set_X = [
-    #     'h3', 'h2-b1', 'h2-a1', 'h2-trans-mean', 'h2-trans-max', 'h2-trans-min','h2-trans-median', 'h2-trans-num',
-    #     'h2', 'h1-b1', 'h1-a1', 'h1-trans-mean','h1-trans-max', 'h1-trans-min', 'h1-trans-median', 'h1-trans-num',
-    #     'h1', 'b1','a1', 'trans-mean', 'trans-max', 'trans-min', 'trans-median', 'trans-num']
-    # print(cols_name_set_X)#len(cols_name_set_X) = 24, input_dim of each timestep is 8+1(cost), timestep = 3
-    # ['h3', 'h2-b1', 'h2-a1', 'h2-trans-mean', 'h2-trans-max', 'h2-trans-min',
-    # 'h2-trans-median', 'h2-trans-num', 'h2', 'h1-b1', 'h1-a1', 'h1-trans-mean',
-    # 'h1-trans-max', 'h1-trans-min', 'h1-trans-median', 'h1-trans-num', 'h1', 'b1',
-    # 'a1', 'trans-mean', 'trans-max', 'trans-min', 'trans-median', 'trans-num']
-    df_X = batch_idataFrame[cols_name_set_X]
-
-    ############################## extract y and convert it into categorical value ##############################
-    df_Y = batch_idataFrame[['ask']]
-    Y_categorical = []
-    for i in range(batch_idataFrame.shape[0]):
-        y_i = Convert_Y_into_categorical_Class7(batch_idataFrame, i, classes)
-        Y_categorical.append(y_i)
-
-    # print(df_market_seller_unit.shape[1])
-    # print(df_cost.shape[1])
-    # print(df_UB.shape[1])
-    # print(df_X.shape[1])
-    # print(df_Y.shape[1])
-    # print(batch_idataFrame.shape[1])
-    # print(list(batch_idataFrame))
-    assert (df_market_seller_unit.shape[1] + df_cost.shape[1] + df_UB.shape[1] + df_X.shape[1] + df_Y.shape[1]) == batch_idataFrame.shape[1]
-
-    return np.array(df_X), np.array(Y_categorical), np.array(df_cost), np.array(df_UB), df_market_seller_unit
-
-def Convert_to_training_DataFormat_Class7_Transformer(batch_idataFrame, classes):
-    df_market_seller_unit = batch_idataFrame[
-        ['MarketID_period', 'userid_profile', 'unit']]  # used for mark seller info
-    df_cost = batch_idataFrame[['cost']]
-    df_UB = batch_idataFrame[['upper_bound_unit_cost']]
-    ############################## extract X ##############################
-    cols_name_set_X = [
-        'h2-b1', 'h2-a1',
-        'h1-b1', 'h1-a1',
-        'b1', 'a1']
     # cols_name_set_X = [
     #     'h3', 'h2-b1', 'h2-a1', 'h2-trans-mean', 'h2-trans-max', 'h2-trans-min','h2-trans-median', 'h2-trans-num',
     #     'h2', 'h1-b1', 'h1-a1', 'h1-trans-mean','h1-trans-max', 'h1-trans-min', 'h1-trans-median', 'h1-trans-num',
